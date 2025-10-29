@@ -2,51 +2,248 @@ import streamlit as st
 import cv2
 import numpy as np
 from PIL import Image
-from face_shape_detector import detect_face_shape
-from recommender import recommend_styles
-from overlay_utils import overlay_image
+import time
 
-st.set_page_config(page_title="LookMate – AI Styler", layout="wide")
+from face_shape_detector_ml import detect_face_shape
 
-st.title("LookMate: Your Style Partner 💇")
+st.set_page_config(
+    page_title="LookMate – AI Styler", 
+    layout="wide",
+    initial_sidebar_state="expanded",
+    page_icon="✨"
+)
 
-option = st.radio("Choose Input Mode:", ["📤 Upload Photo", "📸 Use Webcam"])
+st.markdown("""
+<style>
+    .main {
+        padding-top: 2rem;
+    }
+    
+    .stApp {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .main-header {
+        text-align: center;
+        background: rgba(255, 255, 255, 0.1);
+        padding: 2rem;
+        border-radius: 20px;
+        backdrop-filter: blur(10px);
+        margin-bottom: 2rem;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .main-title {
+        font-size: 3rem;
+        font-weight: 700;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        margin-bottom: 0.5rem;
+    }
+    
+    .main-subtitle {
+        font-size: 1.2rem;
+        color: rgba(255, 255, 255, 0.8);
+        margin-bottom: 0;
+    }
+    
+    .result-card {
+        background: rgba(255, 255, 255, 0.95);
+        padding: 2rem;
+        border-radius: 15px;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        margin: 1rem 0;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .face-shape-result {
+        text-align: center;
+        font-size: 2rem;
+        font-weight: 600;
+        color: #4CAF50;
+        margin: 1rem 0;
+        padding: 1rem;
+        background: linear-gradient(45deg, #4CAF50, #45a049);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+    }
+    
+    .sidebar .sidebar-content {
+        background: rgba(255, 255, 255, 0.1);
+        backdrop-filter: blur(10px);
+    }
+    
+    .stButton > button {
+        background: linear-gradient(45deg, #667eea, #764ba2);
+        color: white;
+        border: none;
+        border-radius: 25px;
+        padding: 0.5rem 2rem;
+        font-weight: 600;
+        transition: all 0.3s ease;
+    }
+    
+    .stButton > button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .live-feed {
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    }
+    
+    .info-box {
+        background: linear-gradient(45deg, #ff9a9e, #fecfef);
+        padding: 1rem;
+        border-radius: 10px;
+        margin: 1rem 0;
+        color: #333;
+        font-weight: 500;
+    }
+</style>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="main-header">
+    <h1 class="main-title">✨ LookMate</h1>
+    <p class="main-subtitle">Your AI-Powered Style Partner</p>
+</div>
+""", unsafe_allow_html=True)
+
+with st.sidebar:
+    st.markdown("### 🎨 Controls")
+    input_mode = st.radio(
+        "Choose Input Method:",
+        ["📤 Upload Photo", "📸 Webcam", "🎥 Live Detection"],
+        help="Select how you want to analyze your face shape"
+    )
+    
+    st.markdown("---")
+    st.markdown("### ℹ️ About")
+    st.info("LookMate uses advanced AI to detect your face shape and provide personalized style recommendations.")
+
+col1, col2 = st.columns([1, 1], gap="large")
 
 img = None
-if option == "📤 Upload Photo":
-    uploaded_file = st.file_uploader("Upload a photo", type=["jpg","jpeg","png"])
-    if uploaded_file:
-        file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, 1)
-elif option == "📸 Use Webcam":
-    capture = st.camera_input("Take a picture")
-    if capture:
-        img = Image.open(capture)
-        img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+if input_mode == "📤 Upload Photo":
+    with col1:
+        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+        st.markdown("#### 📤 Upload Your Photo")
+        uploaded_file = st.file_uploader(
+            "Choose a photo", 
+            type=["jpg","jpeg","png"],
+            help="Upload a clear front-facing photo for best results"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        if uploaded_file:
+            file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+            img = cv2.imdecode(file_bytes, 1)
+            
+elif input_mode == "📸 Webcam":
+    with col1:
+        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+        st.markdown("#### 📸 Take a Photo")
+        capture = st.camera_input(
+            "Capture your photo",
+            help="Position your face in the center and ensure good lighting"
+        )
+        st.markdown('</div>', unsafe_allow_html=True)
+        
+        if capture:
+            img = Image.open(capture)
+            img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
-if img is not None:
-    st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), caption="Your Photo", use_column_width=True)
+if input_mode == "🎥 Live Detection":
+    st.markdown('<div class="result-card">', unsafe_allow_html=True)
+    st.markdown("#### 🎥 Live Face Shape Detection")
+    st.markdown('<div class="info-box">Position your face in front of the camera for real-time analysis</div>', unsafe_allow_html=True)
+    
+    FRAME_WINDOW = st.empty()
+    control_col1, control_col2 = st.columns([1, 1])
+    
+    with control_col1:
+        start_detection = st.button("🚀 Start Detection", type="primary")
+    with control_col2:
+        stop_detection = st.button("⏹️ Stop Detection")
+    
+    if start_detection:
+        cap = cv2.VideoCapture(0)
+        
+        try:
+            while True:
+                ret, frame = cap.read()
+                if not ret:
+                    st.error("❌ Could not access webcam")
+                    break
+                    
+                frame = cv2.flip(frame, 1)
+                face_shape, landmarks = detect_face_shape(frame)
+                
+                if face_shape:
+                    cv2.rectangle(frame, (10, 10), (400, 80), (0, 0, 0), -1)
+                    cv2.rectangle(frame, (10, 10), (400, 80), (0, 255, 0), 2)
+                    cv2.putText(frame, f"Face Shape: {face_shape}", (20, 45), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                    cv2.putText(frame, "AI Detection Active", (20, 65), 
+                               cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+                
+                FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+                time.sleep(0.03)
+                
+        except Exception as e:
+            st.error(f"Error: {e}")
+        finally:
+            cap.release()
+    
+    st.markdown('</div>', unsafe_allow_html=True)
 
-    gender = st.radio("Select Gender:", ["male", "female"])
-    face_shape = detect_face_shape(img)
+elif img is not None:
+    face_shape, landmarks = detect_face_shape(img)
+    
+    with col1:
+        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+        st.markdown("#### 📷 Your Photo")
+        st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), use_column_width=True)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    if face_shape:
-        st.success(f"✅ Detected Face Shape: **{face_shape}**")
-        styles = recommend_styles(face_shape, gender)
-
-        if gender == "male":
-            st.subheader("👨 Recommended Hairstyles")
-            for h in styles["hairstyles"]:
-                st.image(f"assets/{h}", caption=h.split("/")[-1].replace(".png","").title())
-
-            st.subheader("🧔 Recommended Beards")
-            for b in styles["beards"]:
-                st.image(f"assets/{b}", caption=b.split("/")[-1].replace(".png","").title())
-
+    with col2:
+        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+        if face_shape:
+            st.markdown("#### 🎯 Analysis Results")
+            st.markdown(f'<div class="face-shape-result">Face Shape: {face_shape}</div>', unsafe_allow_html=True)
+            
+            descriptions = {
+                "Oval": "🥚 Balanced proportions with gentle curves",
+                "Round": "⭕ Soft, curved features with full cheeks", 
+                "Square": "⬜ Strong jawline with angular features",
+                "Heart": "💖 Wider forehead tapering to pointed chin",
+                "Oblong": "📏 Longer face with balanced width"
+            }
+            
+            if face_shape in descriptions:
+                st.info(f"**Characteristics:** {descriptions[face_shape]}")
+            
+            st.success("✅ Face detection successful!")
+            st.markdown('<div class="info-box">Style recommendations coming soon! 💄✨</div>', unsafe_allow_html=True)
         else:
-            st.subheader("👩 Recommended Hairstyles")
-            for h in styles:
-                st.image(f"assets/{h}", caption=h.split("/")[-1].replace(".png","").title())
+            st.markdown("#### ❌ Detection Failed")
+            st.error("Could not detect face shape")
+            st.markdown("""
+            **Tips for better detection:**
+            - Ensure good lighting
+            - Face the camera directly
+            - Remove glasses or accessories
+            - Use a clear, high-quality image
+            """)
+        st.markdown('</div>', unsafe_allow_html=True)
 
-    else:
-        st.error("❌ Face not detected. Try another photo or better lighting.")
+st.markdown("---")
+st.markdown("""
+<div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem;">
+    <p>✨ Powered by AI • Built with ❤️ • LookMate v1.0</p>
+</div>
+""", unsafe_allow_html=True)

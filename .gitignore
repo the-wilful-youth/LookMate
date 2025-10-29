@@ -12,7 +12,13 @@ build/
 .eggs/
 *.manifest
 *.spec
-
+model/
+assets/
+logs/
+*.log
+.cache/
+.ipynb_checkpoints/
+.DS_Store
 
 .env/
 .venv/
