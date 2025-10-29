@@ -4,7 +4,7 @@ import numpy as np
 from PIL import Image
 import time
 
-from face_shape_detector_ml import detect_face_shape
+from face_shape_detector import detect_face_shape
 
 st.set_page_config(
     page_title="LookMate – AI Styler", 
@@ -21,6 +21,26 @@ st.markdown("""
     
     .stApp {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    header[data-testid="stHeader"] {
+        display: none;
+    }
+    
+    .stToolbar {
+        display: none;
+    }
+    
+    .stDeployButton {
+        display: none;
+    }
+    
+    #MainMenu {
+        visibility: hidden;
+    }
+    
+    footer {
+        visibility: hidden;
     }
     
     .main-header {
@@ -121,9 +141,6 @@ with st.sidebar:
         help="Select how you want to analyze your face shape"
     )
     
-    st.markdown("---")
-    st.markdown("### ℹ️ About")
-    st.info("LookMate uses advanced AI to detect your face shape and provide personalized style recommendations.")
 
 col1, col2 = st.columns([1, 1], gap="large")
 
@@ -171,7 +188,7 @@ if input_mode == "🎥 Live Detection":
         stop_detection = st.button("⏹️ Stop Detection")
     
     if start_detection:
-        cap = cv2.VideoCapture(0)
+        cap = cv2.VideoCapture(1)
         
         try:
             while True:
@@ -191,7 +208,7 @@ if input_mode == "🎥 Live Detection":
                     cv2.putText(frame, "AI Detection Active", (20, 65), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
                 
-                FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_column_width=True)
+                FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
                 time.sleep(0.03)
                 
         except Exception as e:
@@ -207,7 +224,7 @@ elif img is not None:
     with col1:
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
         st.markdown("#### 📷 Your Photo")
-        st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), use_column_width=True)
+        st.image(cv2.cvtColor(img, cv2.COLOR_BGR2RGB), use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
 
     with col2:
@@ -244,6 +261,6 @@ elif img is not None:
 st.markdown("---")
 st.markdown("""
 <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem;">
-    <p>✨ Powered by AI • Built with ❤️ • LookMate v1.0</p>
+    <p>✨ Built by Team ADAPT • LookMate v1.0</p>
 </div>
 """, unsafe_allow_html=True)
