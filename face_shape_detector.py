@@ -3,25 +3,55 @@ import mediapipe as mp
 import numpy as np
 import torch
 import torch.nn as nn
-from torchvision import transforms
+from torchvision import transforms, models
 
 mp_face_mesh = mp.solutions.face_mesh
 
-class CustomMobileNet(nn.Module):
-    def __init__(self, num_classes=5):
-        super(CustomMobileNet, self).__init__()
-        self.features = nn.Sequential()
-        self.classifier = nn.Sequential(
-            nn.Dropout(0.2),
-            nn.Linear(1792, num_classes)
-        )
+def load_face_shape_model(model_path='model/model.pth'):
+    device = torch.device('cpu')
+    model = models.mobilenet_v2(pretrained=False, width_mult=0.75)
+    model.classifier[1] = nn.Linear(model.last_channel, 5)
+    model.load_state_dict(torch.load(model_path, map_location=device), strict=False)
+    model.eval()
+    return model
+
+def load_gender_model(model_path='model/gender.pth'):
+    device = torch.device('cpu')
+    model = models.mobilenet_v2(pretrained=False, width_mult=0.75)
+    model.classifier[1] = nn.Linear(model.last_channel, 2)
+    model.load_state_dict(torch.load(model_path, map_location=device), strict=False)
+    model.eval()
+    return model
+
+def detect_gender(face_crop, model_path='model/gender.pth'):
+    device = torch.device('cpu')
+    gender_classes = ['Female', 'Male']
     
-    def forward(self, x):
-        x = self.features(x)
-        x = nn.functional.adaptive_avg_pool2d(x, (1, 1))
-        x = torch.flatten(x, 1)
-        x = self.classifier(x)
-        return x
+    if face_crop.size == 0:
+        return None
+    
+    face_resized = cv2.resize(face_crop, (224, 224))
+    face_rgb = cv2.cvtColor(face_resized, cv2.COLOR_BGR2RGB)
+    
+    transform = transforms.Compose([
+        transforms.ToPILImage(),
+        transforms.ToTensor(),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
+    ])
+    
+    face_tensor = transform(face_rgb).unsqueeze(0)
+    
+    try:
+        model = load_gender_model(model_path)
+        
+        with torch.no_grad():
+            outputs = model(face_tensor)
+            _, predicted = torch.max(outputs, 1)
+            gender = gender_classes[predicted.item()]
+        return gender
+    except Exception as e:
+        print(f"Gender detection error: {e}")
+        return None
 
 def detect_face_shape(image, model_path='model/model.pth'):
     device = torch.device('cpu')
@@ -31,7 +61,7 @@ def detect_face_shape(image, model_path='model/model.pth'):
                                refine_landmarks=True, min_detection_confidence=0.5) as face_mesh:
         results = face_mesh.process(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
         if not results.multi_face_landmarks:
-            return None, None
+            return None, None, None
 
         landmarks = results.multi_face_landmarks[0].landmark
         h, w, _ = image.shape
@@ -44,7 +74,7 @@ def detect_face_shape(image, model_path='model/model.pth'):
         
         face_crop = image[y_min:y_max, x_min:x_max]
         if face_crop.size == 0:
-            return None, None
+            return None, None, None
             
         face_resized = cv2.resize(face_crop, (224, 224))
         face_rgb = cv2.cvtColor(face_resized, cv2.COLOR_BGR2RGB)
@@ -58,10 +88,7 @@ def detect_face_shape(image, model_path='model/model.pth'):
         face_tensor = transform(face_rgb).unsqueeze(0)
         
         try:
-            model_state = torch.load(model_path, map_location=device)
-            model = CustomMobileNet()
-            model.load_state_dict(model_state, strict=False)
-            model.eval()
+            model = load_face_shape_model(model_path)
             
             with torch.no_grad():
                 outputs = model(face_tensor)
@@ -72,7 +99,7 @@ def detect_face_shape(image, model_path='model/model.pth'):
             face_length = np.linalg.norm(points[10] - points[152])
             
             if jaw_width == 0:
-                return None, None
+                return None, None, None
                 
             ratio = face_length / jaw_width
             forehead_width = np.linalg.norm(points[21] - points[251])
@@ -90,4 +117,5 @@ def detect_face_shape(image, model_path='model/model.pth'):
             else:
                 shape = "Square"
 
-        return shape, points
+        gender = detect_gender(face_crop)
+        return shape, points, gender

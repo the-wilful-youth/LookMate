@@ -271,14 +271,17 @@ if input_mode == "🎥 Live Detection":
                     break
                     
                 frame = cv2.flip(frame, 1)
-                face_shape, landmarks = detect_face_shape(frame)
+                face_shape, landmarks, gender = detect_face_shape(frame)
                 
                 if face_shape:
-                    cv2.rectangle(frame, (10, 10), (400, 80), (0, 0, 0), -1)
-                    cv2.rectangle(frame, (10, 10), (400, 80), (0, 255, 0), 2)
+                    cv2.rectangle(frame, (10, 10), (400, 110), (0, 0, 0), -1)
+                    cv2.rectangle(frame, (10, 10), (400, 110), (0, 255, 0), 2)
                     cv2.putText(frame, f"Face Shape: {face_shape}", (20, 45), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                    cv2.putText(frame, "AI Detection Active", (20, 65), 
+                    if gender:
+                        cv2.putText(frame, f"Gender: {gender}", (20, 75), 
+                                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                    cv2.putText(frame, "AI Detection Active", (20, 95), 
                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
                 
                 FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
@@ -292,7 +295,7 @@ if input_mode == "🎥 Live Detection":
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif img is not None:
-    face_shape, landmarks = detect_face_shape(img)
+    face_shape, landmarks, gender = detect_face_shape(img)
     
     with col1:
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
@@ -305,6 +308,10 @@ elif img is not None:
         if face_shape:
             st.markdown("#### 🎯 Analysis Results")
             st.markdown(f'<div class="face-shape-result">Face Shape: {face_shape}</div>', unsafe_allow_html=True)
+            
+            if gender:
+                gender_icon = "👨" if gender == "Male" else "👩"
+                st.markdown(f'<div class="face-shape-result">{gender_icon} Gender: {gender}</div>', unsafe_allow_html=True)
             
             descriptions = {
                 "Oval": "🥚 Balanced proportions with gentle curves",
