@@ -9,20 +9,26 @@ mp_face_mesh = mp.solutions.face_mesh
 _male_model = None
 _female_model = None
 
-def load_male_model(model_path='model/men.keras'):
+import os
+
+def load_male_model(model_path=None):
     global _male_model
     if _male_model is None:
         try:
+            if model_path is None:
+                model_path = os.path.join(os.path.dirname(__file__), 'model', 'men.keras')
             _male_model = keras.models.load_model(model_path, compile=False)
         except Exception as e:
             print(f"Warning: Male model loading error: {e}")
             _male_model = None
     return _male_model
 
-def load_female_model(model_path='model/Female.h5'):
+def load_female_model(model_path=None):
     global _female_model
     if _female_model is None:
         try:
+            if model_path is None:
+                model_path = os.path.join(os.path.dirname(__file__), 'model', 'Female.h5')
             _female_model = keras.models.load_model(model_path, compile=False)
         except Exception as e:
             print(f"Warning: Female model not found at {model_path}")

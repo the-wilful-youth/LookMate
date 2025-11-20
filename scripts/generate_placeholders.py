@@ -55,26 +55,26 @@ def main():
     """Generate all placeholder overlays"""
     
     # Ensure directories exist
-    os.makedirs('assests/Men/hairstyles', exist_ok=True)
-    os.makedirs('assests/Men/beards', exist_ok=True)
-    os.makedirs('assests/Women/hairstyles', exist_ok=True)
+    os.makedirs('assets/Men/hairstyles', exist_ok=True)
+    os.makedirs('assets/Men/beards', exist_ok=True)
+    os.makedirs('assets/Women/hairstyles', exist_ok=True)
     
     print("Generating placeholder AR overlays...\n")
     
     # Male hairstyles
     print("Creating male hairstyle overlays...")
     create_placeholder_hairstyle(
-        'assests/Men/hairstyles/pompadour.png',
+        'assets/Men/hairstyles/pompadour.png',
         (139, 69, 19),  # Brown
         "Pompadour"
     )
     create_placeholder_hairstyle(
-        'assests/Men/hairstyles/quiff.png',
+        'assets/Men/hairstyles/quiff.png',
         (70, 70, 70),  # Dark gray
         "Quiff"
     )
     create_placeholder_hairstyle(
-        'assests/Men/hairstyles/side_part.png',
+        'assets/Men/hairstyles/side_part.png',
         (101, 67, 33),  # Dark brown
         "Side Part"
     )
@@ -82,17 +82,17 @@ def main():
     # Female hairstyles
     print("\nCreating female hairstyle overlays...")
     create_placeholder_hairstyle(
-        'assests/Women/hairstyles/long_layers.png',
+        'assets/Women/hairstyles/long_layers.png',
         (139, 69, 19),  # Brown
         "Long Layers"
     )
     create_placeholder_hairstyle(
-        'assests/Women/hairstyles/bob_cut.png',
+        'assets/Women/hairstyles/bob_cut.png',
         (70, 70, 70),  # Dark gray
         "Bob Cut"
     )
     create_placeholder_hairstyle(
-        'assests/Women/hairstyles/pixie.png',
+        'assets/Women/hairstyles/pixie.png',
         (160, 82, 45),  # Medium brown
         "Pixie"
     )
@@ -100,17 +100,17 @@ def main():
     # Beard styles
     print("\nCreating beard style overlays...")
     create_placeholder_beard(
-        'assests/Men/beards/full_beard.png',
+        'assets/Men/beards/full_beard.png',
         (101, 67, 33),  # Dark brown
         "Full Beard"
     )
     create_placeholder_beard(
-        'assests/Men/beards/goatee.png',
+        'assets/Men/beards/goatee.png',
         (70, 70, 70),  # Dark gray
         "Goatee"
     )
     create_placeholder_beard(
-        'assests/Men/beards/stubble.png',
+        'assets/Men/beards/stubble.png',
         (90, 60, 40),  # Medium brown
         "Stubble"
     )

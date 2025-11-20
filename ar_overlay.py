@@ -11,7 +11,7 @@ import os
 class AROverlay:
     """Manages AR overlay rendering for hairstyles and beards"""
     
-    def __init__(self, assets_path='assests'):
+    def __init__(self, assets_path='assets'):
         self.assets_path = assets_path
         self.overlay_cache = {}
         
@@ -203,9 +203,9 @@ def create_sample_overlays():
     
     # Create directory structure
     dirs = [
-        'assests/Men/hairstyles',
-        'assests/Men/beards',
-        'assests/Women/hairstyles'
+        'assets/Men/hairstyles',
+        'assets/Men/beards',
+        'assets/Women/hairstyles'
     ]
     
     for dir_path in dirs:
@@ -213,9 +213,9 @@ def create_sample_overlays():
     
     print("✓ Directory structure created for AR overlays")
     print("Note: Add PNG images with transparency for hairstyles and beards to:")
-    print("  - assests/Men/hairstyles/")
-    print("  - assests/Men/beards/")
-    print("  - assests/Women/hairstyles/")
+    print("  - assets/Men/hairstyles/")
+    print("  - assets/Men/beards/")
+    print("  - assets/Women/hairstyles/")
 
 
 if __name__ == "__main__":
