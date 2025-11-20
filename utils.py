@@ -286,7 +286,7 @@ def render_footer():
     st.markdown("---")
     st.markdown("""
     <div style="text-align: center; padding: 2rem; font-size: 0.9rem; font-weight: 600; background-color: rgba(255,255,255,0.9); border-radius: 10px; margin-top: 2rem;">
-        <p style="color: #000000 !important; margin: 0;">LookMate v2.4 • High Contrast Edition</p>
+        <p style="color: #000000 !important; margin: 0;">LookMate • Developed by Team ADAPT</p>
     </div>
     """, unsafe_allow_html=True)
 

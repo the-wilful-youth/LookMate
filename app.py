@@ -111,18 +111,75 @@ if input_mode == "🎥 Live Detection":
     st.markdown("#### 🎥 Live Face Shape Detection")
     st.markdown('<div class="info-box">Position your face in front of the camera for real-time analysis</div>', unsafe_allow_html=True)
     
+    # Initialize session state for camera control
+    if 'camera_running' not in st.session_state:
+        st.session_state.camera_running = False
+    if 'ar_hairstyle' not in st.session_state:
+        st.session_state.ar_hairstyle = None
+    if 'ar_beard' not in st.session_state:
+        st.session_state.ar_beard = None
+    
     FRAME_WINDOW = st.empty()
     control_col1, control_col2 = st.columns([1, 1])
     
     with control_col1:
-        start_detection = st.button("🚀 Start Detection", type="primary")
+        if st.button("🚀 Start Detection", type="primary"):
+            st.session_state.camera_running = True
     with control_col2:
-        stop_detection = st.button("⏹️ Stop Detection")
+        if st.button("⏹️ Stop Detection"):
+            st.session_state.camera_running = False
+    
+    # Style selectors (outside camera loop)
+    st.markdown("---")
+    st.markdown("### 💇 Select Styles to Try")
+    
+    style_col1, style_col2 = st.columns(2)
+    
+    with style_col1:
+        st.markdown("**Hairstyles**")
+        available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
+        if available_hairstyles:
+            hairstyle_options = ["None"] + available_hairstyles
+            current_hair_idx = 0
+            if st.session_state.ar_hairstyle in available_hairstyles:
+                current_hair_idx = hairstyle_options.index(st.session_state.ar_hairstyle)
+            
+            selected_hair = st.selectbox(
+                "Choose hairstyle:",
+                hairstyle_options,
+                index=current_hair_idx,
+                key="hair_selector"
+            )
+            if selected_hair == "None":
+                st.session_state.ar_hairstyle = None
+            else:
+                st.session_state.ar_hairstyle = selected_hair
+    
+    with style_col2:
+        if gender_selection == "Male":
+            st.markdown("**Beard Styles**")
+            available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
+            if available_beards:
+                beard_options = ["None"] + available_beards
+                current_beard_idx = 0
+                if st.session_state.ar_beard in available_beards:
+                    current_beard_idx = beard_options.index(st.session_state.ar_beard)
+                
+                selected_beard = st.selectbox(
+                    "Choose beard:",
+                    beard_options,
+                    index=current_beard_idx,
+                    key="beard_selector"
+                )
+                if selected_beard == "None":
+                    st.session_state.ar_beard = None
+                else:
+                    st.session_state.ar_beard = selected_beard
     
     # Placeholder for details below the video
     details_placeholder = st.empty()
     
-    if start_detection:
+    if st.session_state.camera_running:
         # Use selected camera index
         cap = cv2.VideoCapture(1)
         
@@ -147,15 +204,10 @@ if input_mode == "🎥 Live Detection":
                     face_shape, landmarks, detected_gender = st.session_state.face_detector.detect_face_shape(frame, gender=gender_selection)
                     
                     if face_shape:
-                        # Apply AR overlays if enabled
-                        if enable_ar and landmarks is not None:
-                            # Ensure session state variables exist (fallback to sidebar values if needed, but sidebar values are local)
-                            # Actually, let's use the session state if set, otherwise sidebar. 
-                            # But sidebar widgets don't automatically write to these specific session keys unless we key them.
-                            # To keep it simple and robust: use session state if available, else None.
-                            
-                            current_hairstyle = st.session_state.get('ar_hairstyle', ar_hairstyle)
-                            current_beard = st.session_state.get('ar_beard', ar_beard)
+                        # Apply AR overlays from session state
+                        if landmarks is not None:
+                            current_hairstyle = st.session_state.get('ar_hairstyle')
+                            current_beard = st.session_state.get('ar_beard')
                             
                             if current_hairstyle:
                                 frame = st.session_state.ar_overlay.apply_overlay(
@@ -165,11 +217,6 @@ if input_mode == "🎥 Live Detection":
                                 frame = st.session_state.ar_overlay.apply_overlay(
                                     frame, landmarks, 'beard', gender_selection, current_beard
                                 )
-                        
-                        # Draw facial landmarks on frame for AR visualization (optional)
-                        if landmarks is not None and not enable_ar:
-                            for point in landmarks:
-                                cv2.circle(frame, tuple(point), 1, (0, 255, 255), -1)
                         
                         # Draw minimal info box with semi-transparent background
                         overlay = frame.copy()
@@ -241,61 +288,6 @@ if input_mode == "🎥 Live Detection":
                                     st.markdown(recommendations_html, unsafe_allow_html=True)
                                     
                                 st.markdown('</div>', unsafe_allow_html=True)
-                                
-                                # AR Style Selection Gallery
-                                st.markdown("### 💇 Try on Styles")
-                                
-                                # Initialize session state for AR selections if not exists
-                                if 'ar_hairstyle' not in st.session_state:
-                                    st.session_state.ar_hairstyle = None
-                                if 'ar_beard' not in st.session_state:
-                                    st.session_state.ar_beard = None
-                                
-                                # 1. Hairstyles
-                                available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
-                                if available_hairstyles:
-                                    st.markdown("**Hairstyles**")
-                                    cols = st.columns(4)
-                                    
-                                    # Add "None" option
-                                    with cols[0]:
-                                        if st.button("🚫 None", key="hair_none"):
-                                            st.session_state.ar_hairstyle = None
-                                            st.rerun()
-                                    
-                                    for i, style in enumerate(available_hairstyles):
-                                        col_idx = (i + 1) % 4
-                                        with cols[col_idx]:
-                                            # Check if this is the active style
-                                            is_selected = st.session_state.ar_hairstyle == style
-                                            label = f"✅ {style}" if is_selected else style
-                                            
-                                            if st.button(label, key=f"hair_{style}"):
-                                                st.session_state.ar_hairstyle = style
-                                                st.rerun()
-                                                
-                                # 2. Beards (Male only)
-                                if gender_selection == "Male":
-                                    available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
-                                    if available_beards:
-                                        st.markdown("**Beard Styles**")
-                                        b_cols = st.columns(4)
-                                        
-                                        # Add "None" option
-                                        with b_cols[0]:
-                                            if st.button("🚫 None", key="beard_none"):
-                                                st.session_state.ar_beard = None
-                                                st.rerun()
-                                        
-                                        for i, style in enumerate(available_beards):
-                                            col_idx = (i + 1) % 4
-                                            with b_cols[col_idx]:
-                                                is_selected = st.session_state.ar_beard == style
-                                                label = f"✅ {style}" if is_selected else style
-                                                
-                                                if st.button(label, key=f"beard_{style}"):
-                                                    st.session_state.ar_beard = style
-                                                    st.rerun()
 
                     FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
                     # Removed time.sleep for maximum FPS performance
@@ -485,13 +477,11 @@ elif img is not None:
                                 button_label = "✅ Selected" if st.session_state.selected_beard == style else "Try This"
                                 if st.button(button_label, key=f"beard_{style}", use_container_width=True):
                                     st.session_state.selected_beard = style
-                                    st.rerun()
                 
                 # Clear selection button
                 if st.session_state.selected_beard:
                     if st.button("🚫 Remove Beard", use_container_width=False):
                         st.session_state.selected_beard = None
-                        st.rerun()
         
         # Display preview with selected styles
         if st.session_state.selected_hairstyle or st.session_state.selected_beard:
