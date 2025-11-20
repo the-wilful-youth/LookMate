@@ -1,189 +1,236 @@
 import streamlit as st
 
 def load_css():
-    """Load custom CSS styles"""
+    """Load custom CSS styles with high contrast for maximum readability"""
     st.markdown("""
     <style>
+        /* Import Google Fonts */
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+        
+        /* Global Styles */
+        * {
+            font-family: 'Inter', sans-serif;
+            color: #000000; /* Default to black text */
+        }
+        
         .main {
             padding-top: 2rem;
         }
         
+        /* Vibrant Background */
         .stApp {
-            background: linear-gradient(135deg, #0f2d4d 0%, #2c4a6b 25%, #a77693 75%, #ded1c6 100%);
+            background: linear-gradient(135deg, #F042FF 0%, #87F5F5 100%);
+            background-attachment: fixed;
         }
         
-        .stApp > div {
-            color: #ded1c6 !important;
+        /* Hide Streamlit branding */
+        .stToolbar, .stDeployButton, #MainMenu, footer {
+            display: none !important;
         }
         
-        .stMarkdown, .stText, p, span, div {
-            color: #ded1c6 !important;
-        }
-        
-        h1, h2, h3, h4, h5, h6 {
-            color: #ded1c6 !important;
-        }
-        
-        header[data-testid="stHeader"] {
-            display: none;
-        }
-        
-        .stToolbar {
-            display: none;
-        }
-        
-        .stDeployButton {
-            display: none;
-        }
-        
-        #MainMenu {
-            visibility: hidden;
-        }
-        
-        footer {
-            visibility: hidden;
-        }
-        
+        /* Header Styles */
         .main-header {
             text-align: center;
-            background: rgba(15, 45, 77, 0.8);
-            padding: 2rem;
-            border-radius: 20px;
-            backdrop-filter: blur(15px);
+            padding: 3rem 1rem 2rem;
             margin-bottom: 2rem;
-            border: 2px solid rgba(222, 209, 198, 0.3);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+            background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent white backing for header */
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin-left: 1rem;
+            margin-right: 1rem;
         }
         
         .main-title {
-            font-size: 3rem;
-            font-weight: 700;
-            color: white;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            font-size: 3.5rem;
+            font-weight: 800;
+            color: #000000 !important; /* Pure black */
             margin-bottom: 0.5rem;
+            letter-spacing: -0.03em;
+            text-shadow: none; /* Remove shadow for cleaner look on white */
         }
         
         .main-subtitle {
             font-size: 1.2rem;
-            color: rgba(255, 255, 255, 0.9);
-            margin-bottom: 0;
+            color: #374151 !important; /* Dark gray */
+            font-weight: 600;
         }
         
+        /* Card Styles - Solid White */
         .result-card {
-            background: rgba(15, 45, 77, 0.85);
+            background-color: #ffffff !important; /* Solid White */
+            border: 1px solid #e5e7eb;
             padding: 2rem;
-            border-radius: 15px;
-            box-shadow: 0 12px 40px rgba(0,0,0,0.25);
+            border-radius: 16px;
             margin: 1rem 0;
-            border: 2px solid rgba(222, 209, 198, 0.4);
-            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Stronger shadow for separation */
         }
         
         .result-card h4 {
-            color: #ded1c6 !important;
-            margin-bottom: 1rem;
+            color: #000000 !important;
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+            font-size: 1.25rem;
+            border-bottom: 2px solid #f3f4f6;
+            padding-bottom: 1rem;
         }
         
-        .result-card p, .result-card div {
-            color: #ded1c6 !important;
+        .result-card p, .result-card div, .result-card span {
+            color: #000000 !important; /* Pure Black for max contrast */
+            line-height: 1.6;
+            font-weight: 500; /* Readable weight */
+            font-size: 0.95rem; /* Slightly larger text */
         }
         
+        /* Face Shape Result - Highlight */
         .face-shape-result {
             text-align: center;
-            font-size: 2rem;
-            font-weight: 600;
-            color: black !important;
-            margin: 1rem 0;
-            padding: 1rem;
+            font-size: 1.75rem;
+            font-weight: 800;
+            color: #7c3aed !important; /* Violet text */
+            background-color: #f5f3ff; /* Light violet bg */
+            border: 2px solid #7c3aed;
+            margin: 1.5rem 0;
+            padding: 1.5rem;
+            border-radius: 12px;
         }
         
-        .stSuccess {
-            background-color: rgba(15, 45, 77, 0.8) !important;
-            color: #ded1c6 !important;
-            border: 1px solid rgba(222, 209, 198, 0.5) !important;
+        /* Alert Styles */
+        .stSuccess, .stError, .stInfo {
+            background-color: #ffffff !important;
+            border: 1px solid #e5e7eb !important;
+            border-radius: 12px !important;
+            padding: 1.25rem !important;
+            color: #000000 !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            font-weight: 600 !important; /* Bold text in alerts */
         }
         
-        .stError {
-            background-color: rgba(15, 45, 77, 0.8) !important;
-            color: #ded1c6 !important;
-            border: 1px solid rgba(222, 209, 198, 0.5) !important;
-        }
+        .stSuccess { border-left: 6px solid #10b981 !important; }
+        .stError { border-left: 6px solid #ef4444 !important; }
+        .stInfo { border-left: 6px solid #F042FF !important; }
         
-        .stInfo {
-            background-color: rgba(15, 45, 77, 0.8) !important;
-            color: #ded1c6 !important;
-            border: 1px solid rgba(222, 209, 198, 0.5) !important;
-        }
-        
-        .sidebar .sidebar-content {
-            background: linear-gradient(180deg, #0f2d4d 0%, #a77693 100%);
-            backdrop-filter: blur(10px);
+        /* Sidebar Styles */
+        .stSidebar {
+            background-color: #ffffff !important;
         }
         
         .stSidebar > div:first-child {
-            background: linear-gradient(180deg, #0f2d4d 0%, #2c4a6b 50%, #a77693 100%);
-        }
-        
-        .stSidebar .stMarkdown {
-            color: #ded1c6 !important;
+            background-color: #ffffff !important; /* Solid White Sidebar */
+            border-right: 1px solid #e5e7eb;
         }
         
         .stSidebar .stMarkdown h3 {
-            color: #ded1c6 !important;
-            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+            color: #000000 !important;
+            font-size: 1rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 800;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #F042FF;
+            padding-bottom: 0.5rem;
+            display: inline-block;
         }
         
-        .stSidebar .stRadio > label {
-            color: #ded1c6 !important;
-            font-weight: 600;
+        /* Form Elements - High Contrast */
+        .stRadio > label, .stSelectbox > label, .stCheckbox > label, .stFileUploader > label, .stCameraInput > label {
+            color: #000000 !important;
+            font-weight: 800 !important; /* Extra bold labels */
+            font-size: 1rem !important;
         }
         
-        .stSidebar .stRadio div[role="radiogroup"] label {
-            color: #ded1c6 !important;
+        .stRadio div[role="radiogroup"] label {
+            color: #000000 !important; /* Pure black options */
+            font-weight: 600 !important;
         }
         
-        .stSidebar .stInfo {
-            background-color: rgba(15, 45, 77, 0.7) !important;
-            color: #ded1c6 !important;
-            border: 1px solid rgba(222, 209, 198, 0.3);
+        /* Input Field Text Visibility Fix */
+        .stTextInput input, .stSelectbox div[data-baseweb="select"] > div, .stNumberInput input, .stTextArea textarea {
+            color: #000000 !important; /* Force black text inside inputs */
+            background-color: #ffffff !important;
+            font-weight: 600 !important;
         }
         
-        .stFileUploader label {
-            color: #ded1c6 !important;
+        /* Dropdown Menu Options */
+        ul[data-baseweb="menu"] li {
+            background-color: #ffffff !important;
+            color: #000000 !important;
+            font-weight: 600 !important;
         }
         
-        .stCameraInput label {
-            color: #ded1c6 !important;
+        /* Placeholder Text */
+        ::placeholder {
+            color: #6b7280 !important; /* Gray-500 for placeholders */
+            opacity: 1 !important;
         }
         
+        /* Button Styles */
         .stButton > button {
-            background: linear-gradient(45deg, #0f2d4d, #a77693);
-            color: white;
-            border: none;
-            border-radius: 25px;
-            padding: 0.5rem 2rem;
-            font-weight: 600;
-            transition: all 0.3s ease;
+            background: #000000 !important; /* Black button for max contrast */
+            color: #ffffff !important;
+            border: none !important;
+            border-radius: 10px !important;
+            padding: 0.75rem 2rem !important;
+            font-weight: 800 !important;
+            transition: all 0.2s ease !important;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.2) !important;
         }
         
         .stButton > button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            background: #333333 !important;
+            transform: translateY(-2px) !important;
         }
         
-        .live-feed {
-            border-radius: 15px;
-            overflow: hidden;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-        }
-        
+        /* Info Box */
         .info-box {
-            background: linear-gradient(45deg, #a77693, #ded1c6);
+            background-color: #f8fafc;
             padding: 1rem;
             border-radius: 10px;
             margin: 1rem 0;
-            color: #0f2d4d;
-            font-weight: 500;
+            color: #000000;
+            font-weight: 600; /* Bolder info text */
+            border: 1px solid #cbd5e1;
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        
+        /* Typography Overrides */
+        h1, h2, h3, h4, h5, h6 {
+            color: #000000 !important;
+            font-family: 'Inter', sans-serif !important;
+        }
+        
+        p, li, span {
+            color: #000000 !important; /* Pure black for all text */
+            font-weight: 500 !important;
+        }
+        
+        /* List styling for better readability */
+        ul, ol {
+            color: #000000 !important;
+            line-height: 1.8 !important;
+        }
+        
+        li {
+            margin-bottom: 0.5rem !important;
+            color: #000000 !important;
+        }
+        
+        /* Strong/Bold text */
+        strong, b {
+            color: #000000 !important;
+            font-weight: 700 !important;
+        }
+        
+        hr {
+            border-color: #e5e7eb !important;
+            margin: 2rem 0 !important;
+        }
+        
+        /* Loading Spinner */
+        .stSpinner > div {
+            border-color: #000000 !important;
         }
     </style>
     """, unsafe_allow_html=True)
@@ -193,7 +240,7 @@ def render_header():
     st.markdown("""
     <div class="main-header">
         <h1 class="main-title">LookMate</h1>
-        <p class="main-subtitle">Your AI-Powered Style Partner</p>
+        <p class="main-subtitle">AI-Powered Style Analysis</p>
     </div>
     """, unsafe_allow_html=True)
 
@@ -201,7 +248,7 @@ def render_footer():
     """Render the application footer"""
     st.markdown("---")
     st.markdown("""
-    <div style="text-align: center; color: rgba(255,255,255,0.7); padding: 2rem;">
-        <p>✨ Built by Team ADAPT • LookMate v1.0</p>
+    <div style="text-align: center; padding: 2rem; font-size: 0.9rem; font-weight: 600; background-color: rgba(255,255,255,0.9); border-radius: 10px; margin-top: 2rem;">
+        <p style="color: #000000 !important; margin: 0;">LookMate v2.4 • High Contrast Edition</p>
     </div>
     """, unsafe_allow_html=True)

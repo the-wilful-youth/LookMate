@@ -5,7 +5,7 @@ from PIL import Image
 import time
 import json
 
-from face_shape_detector import detect_face_shape
+from face_shape_detector import FaceShapeDetector
 from recommendation_engine import (
     get_recommendations, 
     format_recommendations_display,
@@ -26,38 +26,42 @@ st.set_page_config(
 if 'ar_overlay' not in st.session_state:
     st.session_state.ar_overlay = AROverlay()
 
+# Initialize Face Shape Detector (persistent instance for performance)
+if 'face_detector' not in st.session_state:
+    st.session_state.face_detector = FaceShapeDetector()
+
 # Load CSS and render header
 load_css()
 render_header()
 
 with st.sidebar:
-    st.markdown("### 🎨 Controls")
+    st.markdown("### 📋 Input Method")
     input_mode = st.radio(
-        "Choose Input Method:",
-        ["📤 Upload Photo", "📸 Webcam", "🎥 Live Detection"],
-        help="Select how you want to analyze your face shape"
+        "How would you like to analyze your face?",
+        ["📤 Upload Photo", "📸 Use Webcam", "🎥 Live Detection"],
+        help="Choose your preferred method for face analysis"
     )
     
     st.markdown("---")
-    st.markdown("### 👤 Gender Selection")
+    st.markdown("### 👤 Profile")
     gender_selection = st.radio(
         "Select your gender:",
         ["Male", "Female"],
-        help="Choose your gender for accurate face shape detection"
+        help="This helps us provide more accurate recommendations"
     )
     
-    st.info(f"✓ Using {gender_selection} model for face shape detection")
+    st.info(f"✓ Using {gender_selection} detection model")
     
     st.markdown("---")
-    st.markdown("### 🎨 Recommendation Style")
+    st.markdown("### 💡 Recommendations")
     recommendation_style = st.radio(
-        "Choose recommendation detail level:",
+        "Detail level:",
         ["Quick Overview", "Detailed Guide"],
-        help="Quick Overview: Simple list. Detailed Guide: Step-by-step with celebrity examples"
+        help="Quick: Simple list • Detailed: Step-by-step with celebrity examples"
     )
     
     st.markdown("---")
-    st.markdown("### 🎨 AR Virtual Try-On")
+    st.markdown("### ✨ Virtual Try-On (AR)")
     enable_ar = st.checkbox("Enable AR Overlays", value=False, 
                             help="Try virtual hairstyles and beards in real-time")
     
@@ -69,24 +73,24 @@ with st.sidebar:
         available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
         
         if available_hairstyles:
-            ar_hairstyle = st.selectbox("Choose Hairstyle:", 
+            ar_hairstyle = st.selectbox("Hairstyle:", 
                                         ["None"] + available_hairstyles,
                                         help="Select a hairstyle to try virtually")
             if ar_hairstyle == "None":
                 ar_hairstyle = None
         else:
-            st.info("💡 No hairstyle overlays available. Add PNG images to assets folder.")
+            st.info("💡 Add PNG images to assets folder for hairstyles")
         
         if gender_selection == "Male":
             available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
             if available_beards:
-                ar_beard = st.selectbox("Choose Beard:", 
+                ar_beard = st.selectbox("Beard Style:", 
                                        ["None"] + available_beards,
                                        help="Select a beard style to try virtually")
                 if ar_beard == "None":
                     ar_beard = None
             else:
-                st.info("💡 No beard overlays available. Add PNG images to assets folder.")
+                st.info("💡 Add PNG images to assets folder for beards")   
 
 col1, col2 = st.columns([1, 1], gap="large")
 
@@ -106,7 +110,7 @@ if input_mode == "📤 Upload Photo":
             file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
             img = cv2.imdecode(file_bytes, 1)
             
-elif input_mode == "📸 Webcam":
+elif input_mode == "📸 Use Webcam":
     with col1:
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
         st.markdown("#### 📸 Take a Photo")
@@ -117,8 +121,12 @@ elif input_mode == "📸 Webcam":
         st.markdown('</div>', unsafe_allow_html=True)
         
         if capture:
-            img = Image.open(capture)
-            img = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
+            # Convert the file-like object to an image
+            image = Image.open(capture)
+            # Convert PIL image to numpy array (RGB)
+            img_array = np.array(image)
+            # Convert RGB to BGR for OpenCV
+            img = cv2.cvtColor(img_array, cv2.COLOR_RGB2BGR)
 
 if input_mode == "🎥 Live Detection":
     st.markdown('<div class="result-card">', unsafe_allow_html=True)
@@ -133,13 +141,22 @@ if input_mode == "🎥 Live Detection":
     with control_col2:
         stop_detection = st.button("⏹️ Stop Detection")
     
+    # Placeholder for details below the video
+    details_placeholder = st.empty()
+    
     if start_detection:
-        # Use camera index 0 as default, which is more standard
-        cap = cv2.VideoCapture(0)
+        # Use selected camera index
+        cap = cv2.VideoCapture(1)
+        
+        # Set camera resolution to 640x480 for better performance
+        cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+        cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+        
+        last_face_shape = None
         
         try:
             if not cap.isOpened():
-                st.error("❌ Could not access webcam. Please ensure you have a camera connected and permissions enabled.")
+                st.error(f"❌ Could not access camera at index {camera_index}. Please try a different index in the sidebar.")
             else:
                 while True:
                     ret, frame = cap.read()
@@ -148,7 +165,8 @@ if input_mode == "🎥 Live Detection":
                         break
                         
                     frame = cv2.flip(frame, 1)
-                    face_shape, landmarks, detected_gender = detect_face_shape(frame, gender=gender_selection)
+                    # Use persistent detector instance for performance
+                    face_shape, landmarks, detected_gender = st.session_state.face_detector.detect_face_shape(frame, gender=gender_selection)
                     
                     if face_shape:
                         # Apply AR overlays if enabled
@@ -167,28 +185,79 @@ if input_mode == "🎥 Live Detection":
                             for point in landmarks:
                                 cv2.circle(frame, tuple(point), 1, (0, 255, 255), -1)
                         
-                        # Draw info box
-                        cv2.rectangle(frame, (10, 10), (450, 130), (0, 0, 0), -1)
-                        cv2.rectangle(frame, (10, 10), (450, 130), (0, 255, 0), 2)
+                        # Draw minimal info box with semi-transparent background
+                        overlay = frame.copy()
+                        cv2.rectangle(overlay, (10, 10), (200, 65), (0, 0, 0), -1)
+                        cv2.addWeighted(overlay, 0.5, frame, 0.5, 0, frame)
+                        cv2.rectangle(frame, (10, 10), (200, 65), (0, 255, 0), 2)
                         
-                        # Display Gender
-                        cv2.putText(frame, f"Gender: {gender_selection}", (20, 45), 
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+                        # Helper to draw text with outline for maximum visibility
+                        def draw_text(img, text, pos, scale, color, thickness=1):
+                            # Draw black outline for contrast
+                            cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, scale, (0, 0, 0), thickness + 2)
+                            # Draw bright text
+                            cv2.putText(img, text, pos, cv2.FONT_HERSHEY_SIMPLEX, scale, color, thickness)
+
+                        # Display gender and face shape with smaller font
+                        draw_text(frame, f"Gender: {gender_selection}", (15, 28), 0.4, (0, 255, 0), 1)
+                        draw_text(frame, f"Face Shape: {face_shape}", (15, 45), 0.4, (0, 255, 0), 1)
                         
-                        # Display Face Shape
-                        cv2.putText(frame, f"Face Shape: {face_shape}", (20, 80), 
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
-                        
-                        # Display landmarks count
+                        # Display AR status with smaller font
                         if landmarks is not None:
-                            cv2.putText(frame, f"AR Points: {len(landmarks)}", (20, 110), 
-                                       cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
+                            draw_text(frame, f"AR Points: {len(landmarks)}", (15, 60), 0.35, (255, 255, 0), 1)
+                        else:
+                            draw_text(frame, "AI Active", (15, 60), 0.35, (255, 255, 255), 1)
                         
-                        cv2.putText(frame, "AI Detection Active", (20, 122), 
-                                   cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 255, 255), 1)
-                    
+                        # Update details panel if face shape changed
+                        if face_shape != last_face_shape:
+                            last_face_shape = face_shape
+                            
+                            with details_placeholder.container():
+                                st.markdown('<div class="result-card">', unsafe_allow_html=True)
+                                st.markdown("#### 🎯 Analysis Results")
+                                
+                                # Display Gender prominently
+                                gender_icon = "👨" if gender_selection == "Male" else "👩"
+                                st.markdown(f'<div class="face-shape-result">{gender_icon} Gender: {gender_selection}</div>', unsafe_allow_html=True)
+                                
+                                # Display Face Shape
+                                st.markdown(f'<div class="face-shape-result">Face Shape: {face_shape}</div>', unsafe_allow_html=True)
+                                
+                                descriptions = {
+                                    "Oval": "🥚 Balanced proportions with gentle curves",
+                                    "Round": "⭕ Soft, curved features with full cheeks", 
+                                    "Square": "⬜ Strong jawline with angular features",
+                                    "Heart": "💖 Wider forehead tapering to pointed chin",
+                                    "Oblong": "📏 Longer face with balanced width"
+                                }
+                                
+                                if face_shape in descriptions:
+                                    st.info(f"**Characteristics:** {descriptions[face_shape]}")
+                                
+                                # Display AR mapping information
+                                if landmarks is not None:
+                                    st.success(f"✅ Face detection successful! {len(landmarks)} facial landmarks detected for AR mapping")
+                                else:
+                                    st.success("✅ Face detection successful!")
+                                
+                                # Display personalized recommendations
+                                st.markdown("---")
+                                st.markdown("### 🌟 Personalized Style Recommendations")
+                                
+                                if recommendation_style == "Detailed Guide":
+                                    # Show detailed recommendations with styling instructions
+                                    detailed_html = format_detailed_recommendations_display(face_shape, gender_selection)
+                                    # Wrap in a container div for proper rendering
+                                    st.markdown(f'<div class="result-card">{detailed_html}</div>', unsafe_allow_html=True)
+                                else:
+                                    # Show quick overview  
+                                    recommendations_html = format_recommendations_display(face_shape, gender_selection)
+                                    st.markdown(recommendations_html, unsafe_allow_html=True)
+                                    
+                                st.markdown('</div>', unsafe_allow_html=True)
+
                     FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
-                    time.sleep(0.03)
+                    # Removed time.sleep for maximum FPS performance
                     
         except Exception as e:
             st.error(f"Error: {e}")
@@ -198,7 +267,8 @@ if input_mode == "🎥 Live Detection":
     st.markdown('</div>', unsafe_allow_html=True)
 
 elif img is not None:
-    face_shape, landmarks, detected_gender = detect_face_shape(img, gender=gender_selection)
+    # Use persistent detector instance
+    face_shape, landmarks, detected_gender = st.session_state.face_detector.detect_face_shape(img, gender=gender_selection)
     
     with col1:
         st.markdown('<div class="result-card">', unsafe_allow_html=True)

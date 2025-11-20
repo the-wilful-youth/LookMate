@@ -16,15 +16,20 @@ class AROverlay:
         self.overlay_cache = {}
         
     def load_overlay_image(self, overlay_path):
-        """Load overlay image with alpha channel"""
+        """Load overlay image with alpha channel (cached in RAM)"""
+        # Check cache first (fast RAM lookup)
         if overlay_path in self.overlay_cache:
             return self.overlay_cache[overlay_path]
         
+        # Only check disk if not in cache
         if not os.path.exists(overlay_path):
             return None
         
+        # Load from disk and cache
         overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
-        self.overlay_cache[overlay_path] = overlay
+        if overlay is not None:
+            self.overlay_cache[overlay_path] = overlay
+        
         return overlay
     
     def apply_overlay(self, frame, landmarks, overlay_type, gender, style_name=None):
