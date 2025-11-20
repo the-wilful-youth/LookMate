@@ -1,3 +1,7 @@
+import os
+# Fix for Mac OpenMP runtime error
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 import streamlit as st
 import cv2
 import numpy as np
@@ -13,7 +17,7 @@ from recommendation_engine import (
     format_detailed_recommendations_display
 )
 from ar_overlay import AROverlay
-from utils import load_css, render_header, render_footer
+from utils import load_css, render_header, render_footer, get_style_recommendations_for_face_shape
 
 st.set_page_config(
     page_title="LookMate – AI Styler", 
@@ -60,41 +64,15 @@ with st.sidebar:
         help="Quick: Simple list • Detailed: Step-by-step with celebrity examples"
     )
     
-    st.markdown("---")
-    st.markdown("### ✨ Virtual Try-On (AR)")
-    enable_ar = st.checkbox("Enable AR Overlays", value=False, 
-                            help="Try virtual hairstyles and beards in real-time")
-    
-    ar_hairstyle = None
-    ar_beard = None
-    
-    if enable_ar:
-        # Get available overlays
-        available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
-        
-        if available_hairstyles:
-            ar_hairstyle = st.selectbox("Hairstyle:", 
-                                        ["None"] + available_hairstyles,
-                                        help="Select a hairstyle to try virtually")
-            if ar_hairstyle == "None":
-                ar_hairstyle = None
-        else:
-            st.info("💡 Add PNG images to assets folder for hairstyles")
-        
-        if gender_selection == "Male":
-            available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
-            if available_beards:
-                ar_beard = st.selectbox("Beard Style:", 
-                                       ["None"] + available_beards,
-                                       help="Select a beard style to try virtually")
-                if ar_beard == "None":
-                    ar_beard = None
-            else:
-                st.info("💡 Add PNG images to assets folder for beards")   
+    # AR overlay selections are now moved to after face detection   
 
 col1, col2 = st.columns([1, 1], gap="large")
 
 img = None
+ar_hairstyle = None
+ar_beard = None
+enable_ar = False
+
 if input_mode == "📤 Upload Photo":
     with col1:
         st.markdown('<div class="result-card">', unsafe_allow_html=True)
@@ -171,13 +149,21 @@ if input_mode == "🎥 Live Detection":
                     if face_shape:
                         # Apply AR overlays if enabled
                         if enable_ar and landmarks is not None:
-                            if ar_hairstyle:
+                            # Ensure session state variables exist (fallback to sidebar values if needed, but sidebar values are local)
+                            # Actually, let's use the session state if set, otherwise sidebar. 
+                            # But sidebar widgets don't automatically write to these specific session keys unless we key them.
+                            # To keep it simple and robust: use session state if available, else None.
+                            
+                            current_hairstyle = st.session_state.get('ar_hairstyle', ar_hairstyle)
+                            current_beard = st.session_state.get('ar_beard', ar_beard)
+                            
+                            if current_hairstyle:
                                 frame = st.session_state.ar_overlay.apply_overlay(
-                                    frame, landmarks, 'hairstyle', gender_selection, ar_hairstyle
+                                    frame, landmarks, 'hairstyle', gender_selection, current_hairstyle
                                 )
-                            if ar_beard and gender_selection == "Male":
+                            if current_beard and gender_selection == "Male":
                                 frame = st.session_state.ar_overlay.apply_overlay(
-                                    frame, landmarks, 'beard', gender_selection, ar_beard
+                                    frame, landmarks, 'beard', gender_selection, current_beard
                                 )
                         
                         # Draw facial landmarks on frame for AR visualization (optional)
@@ -255,6 +241,61 @@ if input_mode == "🎥 Live Detection":
                                     st.markdown(recommendations_html, unsafe_allow_html=True)
                                     
                                 st.markdown('</div>', unsafe_allow_html=True)
+                                
+                                # AR Style Selection Gallery
+                                st.markdown("### 💇 Try on Styles")
+                                
+                                # Initialize session state for AR selections if not exists
+                                if 'ar_hairstyle' not in st.session_state:
+                                    st.session_state.ar_hairstyle = None
+                                if 'ar_beard' not in st.session_state:
+                                    st.session_state.ar_beard = None
+                                
+                                # 1. Hairstyles
+                                available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
+                                if available_hairstyles:
+                                    st.markdown("**Hairstyles**")
+                                    cols = st.columns(4)
+                                    
+                                    # Add "None" option
+                                    with cols[0]:
+                                        if st.button("🚫 None", key="hair_none"):
+                                            st.session_state.ar_hairstyle = None
+                                            st.rerun()
+                                    
+                                    for i, style in enumerate(available_hairstyles):
+                                        col_idx = (i + 1) % 4
+                                        with cols[col_idx]:
+                                            # Check if this is the active style
+                                            is_selected = st.session_state.ar_hairstyle == style
+                                            label = f"✅ {style}" if is_selected else style
+                                            
+                                            if st.button(label, key=f"hair_{style}"):
+                                                st.session_state.ar_hairstyle = style
+                                                st.rerun()
+                                                
+                                # 2. Beards (Male only)
+                                if gender_selection == "Male":
+                                    available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
+                                    if available_beards:
+                                        st.markdown("**Beard Styles**")
+                                        b_cols = st.columns(4)
+                                        
+                                        # Add "None" option
+                                        with b_cols[0]:
+                                            if st.button("🚫 None", key="beard_none"):
+                                                st.session_state.ar_beard = None
+                                                st.rerun()
+                                        
+                                        for i, style in enumerate(available_beards):
+                                            col_idx = (i + 1) % 4
+                                            with b_cols[col_idx]:
+                                                is_selected = st.session_state.ar_beard == style
+                                                label = f"✅ {style}" if is_selected else style
+                                                
+                                                if st.button(label, key=f"beard_{style}"):
+                                                    st.session_state.ar_beard = style
+                                                    st.rerun()
 
                     FRAME_WINDOW.image(cv2.cvtColor(frame, cv2.COLOR_BGR2RGB), use_container_width=True)
                     # Removed time.sleep for maximum FPS performance
@@ -277,20 +318,16 @@ elif img is not None:
         # Create annotated image with landmarks for AR mapping
         annotated_img = img.copy()
         
-        # Apply AR overlays if enabled
-        if enable_ar and landmarks is not None:
-            if ar_hairstyle:
+        # Apply AR overlays from selected styles in session state
+        if landmarks is not None:
+            if st.session_state.get('selected_hairstyle'):
                 annotated_img = st.session_state.ar_overlay.apply_overlay(
-                    annotated_img, landmarks, 'hairstyle', gender_selection, ar_hairstyle
+                    annotated_img, landmarks, 'hairstyle', gender_selection, st.session_state.selected_hairstyle
                 )
-            if ar_beard and gender_selection == "Male":
+            if st.session_state.get('selected_beard') and gender_selection == "Male":
                 annotated_img = st.session_state.ar_overlay.apply_overlay(
-                    annotated_img, landmarks, 'beard', gender_selection, ar_beard
+                    annotated_img, landmarks, 'beard', gender_selection, st.session_state.selected_beard
                 )
-        elif landmarks is not None and not enable_ar:
-            # Draw key facial landmarks for AR mapping
-            for i, point in enumerate(landmarks):
-                cv2.circle(annotated_img, tuple(point), 1, (0, 255, 0), -1)
         
         st.image(cv2.cvtColor(annotated_img, cv2.COLOR_BGR2RGB), use_container_width=True)
         st.markdown('</div>', unsafe_allow_html=True)
@@ -366,6 +403,122 @@ elif img is not None:
             - Remove glasses or accessories
             - Use a clear, high-quality image
             """)
+                
+        st.markdown('</div>', unsafe_allow_html=True)
+    
+    # NEW SECTION: Display recommended styles with AR try-on after detection
+    if face_shape and landmarks is not None:
+        st.markdown('<div class="result-card">', unsafe_allow_html=True)
+        st.markdown("### ✨ Try Virtual Styles (AR)")
+        st.markdown("Select recommended hairstyles and beards to see them on your photo!")
+        
+        # Initialize session state for selected styles
+        if 'selected_hairstyle' not in st.session_state:
+            st.session_state.selected_hairstyle = None
+        if 'selected_beard' not in st.session_state:
+            st.session_state.selected_beard = None
+            
+        # Get recommended styles based on detected face shape
+        recommended_styles = get_style_recommendations_for_face_shape(face_shape, gender_selection)
+        available_hairstyles = st.session_state.ar_overlay.get_available_overlays('hairstyle', gender_selection)
+        
+        # Filter to show only recommended styles that exist as overlays
+        recommended_hairstyles = [h for h in recommended_styles['hairstyles'] if h in available_hairstyles]
+        
+        # Display Hairstyles
+        if recommended_hairstyles:
+            st.markdown(f"#### 💇 Recommended Hairstyles for {face_shape} Face")
+            
+            # Show hairstyle options with images in columns
+            cols_per_row = 3
+            for i in range(0, len(recommended_hairstyles), cols_per_row):
+                cols = st.columns(cols_per_row)
+                for j, col in enumerate(cols):
+                    idx = i + j
+                    if idx < len(recommended_hairstyles):
+                        style = recommended_hairstyles[idx]
+                        with col:
+                            # Display style image
+                            gender_folder = 'Men' if gender_selection == 'Male' else 'Women'
+                            img_path = f"assets/{gender_folder}/hairstyles/{style}.png"
+                            
+                            if os.path.exists(img_path):
+                                st.image(img_path, caption=style.replace('_', ' ').title(), use_container_width=True)
+                            else:
+                                st.write(f"📷 {style.replace('_', ' ').title()}")
+                            
+                            # Button to select this style
+                            button_label = "✅ Selected" if st.session_state.selected_hairstyle == style else "Try This"
+                            if st.button(button_label, key=f"hair_{style}", use_container_width=True):
+                                st.session_state.selected_hairstyle = style
+            
+            # Clear selection button
+            if st.session_state.selected_hairstyle:
+                if st.button("🚫 Remove Hairstyle", use_container_width=False):
+                    st.session_state.selected_hairstyle = None
+        
+        # Display Beards (Male only)
+        if gender_selection == "Male":
+            available_beards = st.session_state.ar_overlay.get_available_overlays('beard', gender_selection)
+            recommended_beards = [b for b in recommended_styles['beards'] if b in available_beards]
+            
+            if recommended_beards:
+                st.markdown(f"#### 🧔 Recommended Beard Styles for {face_shape} Face")
+                
+                # Show beard options with images in columns
+                for i in range(0, len(recommended_beards), cols_per_row):
+                    cols = st.columns(cols_per_row)
+                    for j, col in enumerate(cols):
+                        idx = i + j
+                        if idx < len(recommended_beards):
+                            style = recommended_beards[idx]
+                            with col:
+                                # Display style image
+                                img_path = f"assets/Men/beards/{style}.png"
+                                
+                                if os.path.exists(img_path):
+                                    st.image(img_path, caption=style.replace('_', ' ').title(), use_container_width=True)
+                                else:
+                                    st.write(f"📷 {style.replace('_', ' ').title()}")
+                                
+                                # Button to select this style
+                                button_label = "✅ Selected" if st.session_state.selected_beard == style else "Try This"
+                                if st.button(button_label, key=f"beard_{style}", use_container_width=True):
+                                    st.session_state.selected_beard = style
+                                    st.rerun()
+                
+                # Clear selection button
+                if st.session_state.selected_beard:
+                    if st.button("🚫 Remove Beard", use_container_width=False):
+                        st.session_state.selected_beard = None
+                        st.rerun()
+        
+        # Display preview with selected styles
+        if st.session_state.selected_hairstyle or st.session_state.selected_beard:
+            st.markdown("---")
+            st.markdown("#### 👁️ Preview with Selected Styles")
+            
+            preview_img = img.copy()
+            if st.session_state.selected_hairstyle:
+                preview_img = st.session_state.ar_overlay.apply_overlay(
+                    preview_img, landmarks, 'hairstyle', gender_selection, st.session_state.selected_hairstyle
+                )
+            if st.session_state.selected_beard and gender_selection == "Male":
+                preview_img = st.session_state.ar_overlay.apply_overlay(
+                    preview_img, landmarks, 'beard', gender_selection, st.session_state.selected_beard
+                )
+            
+            st.image(cv2.cvtColor(preview_img, cv2.COLOR_BGR2RGB), use_container_width=True)
+            
+            # Download button
+            _, buf = cv2.imencode('.png', preview_img)
+            st.download_button(
+                label="📥 Download Preview",
+                data=buf.tobytes(),
+                file_name="lookmate_preview.png",
+                mime="image/png"
+            )
+        
         st.markdown('</div>', unsafe_allow_html=True)
 
 render_footer()

@@ -232,6 +232,43 @@ def load_css():
         .stSpinner > div {
             border-color: #000000 !important;
         }
+        
+        /* AR Selection Gallery */
+        .ar-gallery-item {
+            cursor: pointer;
+            transition: transform 0.2s;
+            border-radius: 10px;
+            overflow: hidden;
+            border: 2px solid transparent;
+            text-align: center;
+            background: white;
+            padding: 5px;
+        }
+        
+        .ar-gallery-item:hover {
+            transform: scale(1.05);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        }
+        
+        .ar-gallery-item.selected {
+            border-color: #7c3aed;
+            background-color: #f5f3ff;
+            box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.3);
+        }
+        
+        .ar-gallery-item img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+        
+        .ar-gallery-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 5px;
+            color: #000000;
+        }
     </style>
     """, unsafe_allow_html=True)
 
@@ -252,3 +289,61 @@ def render_footer():
         <p style="color: #000000 !important; margin: 0;">LookMate v2.4 • High Contrast Edition</p>
     </div>
     """, unsafe_allow_html=True)
+
+def get_style_recommendations_for_face_shape(face_shape, gender):
+    """
+    Get recommended hairstyles and beards for specific face shape
+    Returns list of available overlay file names that match recommendations
+    """
+    recommendations = {
+        "Male": {
+            "Oval": {
+                "hairstyles": ["pompadour", "quiff", "side_part"],
+                "beards": ["full_beard", "stubble", "goatee"]
+            },
+            "Round": {
+                "hairstyles": ["high_fade", "angular_fringe", "undercut"],
+                "beards": ["chinstrap", "goatee", "van_dyke"]
+            },
+            "Square": {
+                "hairstyles": ["textured_crop", "messy_quiff", "side_part"],
+                "beards": ["full_beard", "circle_beard", "stubble"]
+            },
+            "Heart": {
+                "hairstyles": ["side_swept", "textured_crop", "medium_layers"],
+                "beards": ["full_beard", "mutton_chops", "extended_goatee"]
+            },
+            "Oblong": {
+                "hairstyles": ["fringe", "side_part", "wavy_medium"],
+                "beards": ["full_beard", "mutton_chops", "rounded_beard"]
+            }
+        },
+        "Female": {
+            "Oval": {
+                "hairstyles": ["long_layers", "bob_cut", "pixie"],
+                "beards": []
+            },
+            "Round": {
+                "hairstyles": ["long_layers", "angled_bob", "high_updo"],
+                "beards": []
+            },
+            "Square": {
+                "hairstyles": ["soft_waves", "layered_long", "side_swept_bangs"],
+                "beards": []
+            },
+            "Heart": {
+                "hairstyles": ["bob_cut", "side_swept_bangs", "shoulder_curls"],
+                "beards": []
+            },
+            "Oblong": {
+                "hairstyles": ["blunt_bangs", "shoulder_waves", "layered_bob"],
+                "beards": []
+            }
+        }
+    }
+    
+    if gender in recommendations and face_shape in recommendations[gender]:
+        return recommendations[gender][face_shape]
+    
+    return {"hairstyles": [], "beards": []}
+
