@@ -59,10 +59,17 @@ class AROverlay:
             if overlay_path and os.path.exists(overlay_path):
                 overlay = self.load_overlay_image(overlay_path)
                 if overlay is not None:
-                    hair_width = int(face_width * 1.4)
-                    hair_height = int(face_height * 0.7)
-                    
-                    offset = -int(face_height * 0.35)
+                    if gender == 'Female':
+                        # Women's hair: Increased width back to 2.3 based on "more widh" feedback
+                        hair_width = int(face_width * 2.3) 
+                        hair_height = int(face_height * 1.4)
+                        # Offset higher to sit on top of head and flow down
+                        offset = -int(face_height * 0.65)
+                    else:
+                        # Men's settings
+                        hair_width = int(face_width * 1.6)
+                        hair_height = int(face_height * 0.9)
+                        offset = -int(face_height * 0.5)
                     
                     frame = self._blend_overlay(
                         frame, overlay, 
@@ -80,10 +87,13 @@ class AROverlay:
                     if overlay is not None:
                         mouth_center = landmarks[13]
                         
-                        beard_width = int(face_width * 0.9)
-                        beard_height = int(face_height * 0.5)
+                        # Adjusted for better fit: Wider to cover jaw
+                        beard_width = int(face_width * 1.1)
+                        beard_height = int(face_height * 0.6)
                         
-                        offset = int(face_height * 0.05)
+                        # Offset moved UP (negative) to fix "coming down" issue
+                        # User requested "more up" -> increased to 0.25
+                        offset = -int(face_height * 0.25)
                         
                         frame = self._blend_overlay(
                             frame, overlay,

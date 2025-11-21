@@ -133,17 +133,23 @@ class FaceShapeDetector:
             prediction = model.predict(input_data, verbose=0)
             class_idx = np.argmax(prediction)
             
+            # DEBUG: Print prediction details
+            print(f"[{gender}] Raw Prediction: {prediction[0]}")
+            print(f"[{gender}] Predicted Class Index: {class_idx} -> {self.shape_classes[class_idx]}")
+            
             return self.shape_classes[class_idx]
             
         except Exception as e:
             print(f"Shape prediction error: {e}")
-            return self._calculate_face_shape(points)
+            return self._calculate_face_shape(points) # Fallback
 
     def _calculate_face_shape(self, points):
         """
         Calculate face shape using geometric ratios (Fallback).
         """
         try:
+            print("Using Geometric Fallback")
+            # Calculate key measurements
             jaw_width = np.linalg.norm(points[234] - points[454])
             face_length = np.linalg.norm(points[10] - points[152])
             forehead_width = np.linalg.norm(points[21] - points[251])
@@ -152,6 +158,7 @@ class FaceShapeDetector:
             if jaw_width == 0: return "Oval"
             
             ratio = face_length / jaw_width
+            print(f"Geometric Ratio: {ratio:.2f}")
             
             if ratio > 1.6: return "Oblong"
             elif ratio > 1.4:
