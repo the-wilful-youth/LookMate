@@ -260,7 +260,6 @@ def get_detailed_recommendations(face_shape, gender):
             }
         },
         "Female": {
-            # Female recommendations remain the same but can be enhanced similarly
             "Oval": {
                 "best_hairstyles": [
                     {
@@ -687,11 +686,9 @@ def get_recommendations(face_shape, gender):
         }
     }
     
-    # Get recommendations for the specific face shape and gender
     if gender in recommendations and face_shape in recommendations[gender]:
         return recommendations[gender][face_shape]
     
-    # Default fallback
     return {
         "hairstyles": ["Consult with a professional stylist for personalized advice"],
         "facial_styles": ["Natural style suits all face shapes"],
@@ -723,6 +720,7 @@ def format_recommendations_display(face_shape, gender):
     
     for style in recs.get("hairstyles", []):
         html += f"<li style='margin: 0.5rem 0; color: #ded1c6;'>{style}</li>"
+
     
     html += f"""
         </ul>
@@ -733,6 +731,7 @@ def format_recommendations_display(face_shape, gender):
     facial_styles = recs.get(facial_key, recs.get("makeup", []))
     for style in facial_styles:
         html += f"<li style='margin: 0.5rem 0; color: #ded1c6;'>{style}</li>"
+
     
     html += f"""
         </ul>
@@ -742,6 +741,7 @@ def format_recommendations_display(face_shape, gender):
     
     for tip in recs.get("tips", []):
         html += f"<li style='margin: 0.5rem 0; color: #ded1c6;'>{tip}</li>"
+
     
     html += """
         </ul>
@@ -771,7 +771,6 @@ def format_detailed_recommendations_display(face_shape, gender):
         </h2>
     """
     
-    # Hairstyles Section
     if "best_hairstyles" in recs and recs["best_hairstyles"]:
         html += """
         <div style="background: rgba(0, 0, 0, 0.3); padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
@@ -802,7 +801,6 @@ def format_detailed_recommendations_display(face_shape, gender):
             """
         html += "</div>"
     
-    # Beards Section (Male)
     if gender == "Male" and "best_beards" in recs and recs["best_beards"]:
         html += """
         <div style="background: rgba(0, 0, 0, 0.3); padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
@@ -833,7 +831,6 @@ def format_detailed_recommendations_display(face_shape, gender):
             """
         html += "</div>"
     
-    # Makeup Section (Female)
     if gender == "Female" and "best_makeup" in recs and recs["best_makeup"]:
         html += """
         <div style="background: rgba(0, 0, 0, 0.3); padding: 1.5rem; border-radius: 10px; margin-bottom: 2rem;">
@@ -858,7 +855,6 @@ def format_detailed_recommendations_display(face_shape, gender):
             """
         html += "</div>"
     
-    # General Tips
     html += """
         <div style="background: linear-gradient(135deg, #a77693, #ded1c6); padding: 1.5rem; border-radius: 10px; margin-top: 2rem;">
             <h3 style="color: #0f2d4d; margin-bottom: 1rem; font-size: 1.3rem;">

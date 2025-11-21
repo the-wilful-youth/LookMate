@@ -105,3 +105,51 @@ assets/
 - File names should match recommendation keys (e.g., `pompadour.png`, `full_beard.png`)
 - Images display in 3-column grid layout
 - Only styles with existing image files will be shown
+
+---
+
+## 🎨 Text Visibility Improvements (Latest Update)
+
+### Issues Fixed:
+- Text in "Start Detection" buttons and info boxes not readable
+- Selectbox dropdown text too light
+- Markdown content text visibility issues
+- Headers and labels not prominent enough
+
+### Changes Made:
+
+1. **Info Box Styling:**
+   - Solid white background (#ffffff)
+   - Bold black border (2px solid #000000)
+   - Extra bold text (font-weight: 700)
+   - Pure black text color for all content
+
+2. **Result Card Styling:**
+   - Black borders (2px) for better definition
+   - Extra bold headers (font-weight: 800, font-size: 1.5rem)
+   - Bold text content (font-weight: 600, font-size: 1rem)
+   - Darker bottom borders on headers (3px solid #000000)
+
+3. **Form Elements:**
+   - Selectbox text: Extra bold (font-weight: 700)
+   - Dropdown options: Bold black text with hover states
+   - Input fields: Bold text (font-weight: 700)
+   - All form labels: Extra bold (font-weight: 800)
+
+4. **Typography:**
+   - All headings: font-weight 800 (extra bold)
+   - All paragraphs, lists, spans: font-weight 600 (semi-bold)
+   - Strong/bold elements: font-weight 800
+   - Line height: 1.8 for lists (better readability)
+
+5. **Markdown Content:**
+   - All markdown text forced to black (#000000)
+   - Bold weights applied to all markdown elements
+   - Headers extra prominent with weight 800
+
+### Result:
+✅ All text is now clearly visible with maximum contrast
+✅ Buttons, labels, and info boxes are easily readable
+✅ Dropdown selections show bold black text
+✅ No more light gray or hard-to-read text
+

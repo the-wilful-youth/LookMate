@@ -79,7 +79,6 @@ class FaceShapeDetector:
         """Crop face based on landmarks with some padding."""
         x, y, w, h = cv2.boundingRect(points)
         
-        # Add padding (20%)
         pad_x = int(w * 0.2)
         pad_y = int(h * 0.2)
         
@@ -138,14 +137,13 @@ class FaceShapeDetector:
             
         except Exception as e:
             print(f"Shape prediction error: {e}")
-            return self._calculate_face_shape(points) # Fallback
+            return self._calculate_face_shape(points)
 
     def _calculate_face_shape(self, points):
         """
         Calculate face shape using geometric ratios (Fallback).
         """
         try:
-            # Calculate key measurements
             jaw_width = np.linalg.norm(points[234] - points[454])
             face_length = np.linalg.norm(points[10] - points[152])
             forehead_width = np.linalg.norm(points[21] - points[251])
@@ -168,7 +166,6 @@ class FaceShapeDetector:
         if hasattr(self, 'face_mesh'):
             self.face_mesh.close()
 
-# Legacy function wrapper
 def detect_face_shape(image, gender=None):
     detector = FaceShapeDetector()
     return detector.detect_face_shape(image, gender)

@@ -17,15 +17,12 @@ class AROverlay:
         
     def load_overlay_image(self, overlay_path):
         """Load overlay image with alpha channel (cached in RAM)"""
-        # Check cache first (fast RAM lookup)
         if overlay_path in self.overlay_cache:
             return self.overlay_cache[overlay_path]
         
-        # Only check disk if not in cache
         if not os.path.exists(overlay_path):
             return None
         
-        # Load from disk and cache
         overlay = cv2.imread(overlay_path, cv2.IMREAD_UNCHANGED)
         if overlay is not None:
             self.overlay_cache[overlay_path] = overlay
@@ -49,13 +46,11 @@ class AROverlay:
         if landmarks is None:
             return frame
         
-        # Define key landmark indices for positioning
-        forehead_top = landmarks[10]  # Top of forehead
-        chin = landmarks[152]  # Bottom of chin
-        left_face = landmarks[234]  # Left edge of face
-        right_face = landmarks[454]  # Right edge of face
+        forehead_top = landmarks[10]
+        chin = landmarks[152]
+        left_face = landmarks[234]
+        right_face = landmarks[454]
         
-        # Calculate face dimensions
         face_width = int(np.linalg.norm(left_face - right_face))
         face_height = int(np.linalg.norm(forehead_top - chin))
         
@@ -64,13 +59,17 @@ class AROverlay:
             if overlay_path and os.path.exists(overlay_path):
                 overlay = self.load_overlay_image(overlay_path)
                 if overlay is not None:
-                    # Position hairstyle above forehead
+                    hair_width = int(face_width * 1.4)
+                    hair_height = int(face_height * 0.7)
+                    
+                    offset = -int(face_height * 0.35)
+                    
                     frame = self._blend_overlay(
                         frame, overlay, 
                         forehead_top, 
-                        int(face_width * 1.2), 
-                        int(face_height * 0.6),
-                        offset_y=-int(face_height * 0.3)
+                        hair_width, 
+                        hair_height,
+                        offset_y=offset
                     )
         
         elif overlay_type == 'beard':
@@ -79,14 +78,19 @@ class AROverlay:
                 if overlay_path and os.path.exists(overlay_path):
                     overlay = self.load_overlay_image(overlay_path)
                     if overlay is not None:
-                        # Position beard on lower face
-                        mouth_bottom = landmarks[13]
+                        mouth_center = landmarks[13]
+                        
+                        beard_width = int(face_width * 0.9)
+                        beard_height = int(face_height * 0.5)
+                        
+                        offset = int(face_height * 0.05)
+                        
                         frame = self._blend_overlay(
                             frame, overlay,
-                            mouth_bottom,
-                            int(face_width * 0.8),
-                            int(face_height * 0.4),
-                            offset_y=0
+                            mouth_center,
+                            beard_width,
+                            beard_height,
+                            offset_y=offset
                         )
         
         return frame
@@ -152,7 +156,6 @@ class AROverlay:
         if style_name:
             return os.path.join(base_path, f"{style_name}.png")
         
-        # Return first available hairstyle
         files = [f for f in os.listdir(base_path) if f.endswith('.png')]
         if files:
             return os.path.join(base_path, files[0])
@@ -206,7 +209,6 @@ def create_sample_overlays():
     """Create sample overlay placeholders (for demonstration)"""
     import os
     
-    # Create directory structure
     dirs = [
         'assets/Men/hairstyles',
         'assets/Men/beards',
