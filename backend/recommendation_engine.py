@@ -1,20 +1,6 @@
-"""
-Recommendation Engine for LookMate
-Provides personalized hairstyle and beard recommendations based on face shape
-Includes detailed explanations and styling instructions
-"""
 
 def get_detailed_recommendations(face_shape, gender):
-    """
-    Get detailed recommendations with explanations and styling tips
     
-    Args:
-        face_shape: Detected face shape (Oval, Round, Square, Heart, Oblong)
-        gender: User's gender (Male, Female)
-    
-    Returns:
-        dict: Contains detailed hairstyles, beards, explanations, and styling tips
-    """
     
     detailed_recommendations = {
         "Male": {

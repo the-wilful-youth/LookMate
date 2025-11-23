@@ -54,19 +54,24 @@ class AROverlay:
         face_width = int(np.linalg.norm(left_face - right_face))
         face_height = int(np.linalg.norm(forehead_top - chin))
         
+        # Check for mock landmarks (all zeros)
+        if face_width == 0 or face_height == 0:
+            # Draw a "Mock Mode" indicator
+            cv2.putText(frame, "AR Unavailable (Mock Mode)", (50, 50), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            return frame
+        
         if overlay_type == 'hairstyle':
             overlay_path = self._get_hairstyle_path(gender, style_name)
             if overlay_path and os.path.exists(overlay_path):
                 overlay = self.load_overlay_image(overlay_path)
                 if overlay is not None:
                     if gender == 'Female':
-                        # Women's hair: Increased width back to 2.3 based on "more widh" feedback
                         hair_width = int(face_width * 2.3) 
                         hair_height = int(face_height * 1.4)
-                        # Offset higher to sit on top of head and flow down
                         offset = -int(face_height * 0.65)
                     else:
-                        # Men's settings
+                    
                         hair_width = int(face_width * 1.6)
                         hair_height = int(face_height * 0.9)
                         offset = -int(face_height * 0.5)
@@ -106,16 +111,16 @@ class AROverlay:
         return frame
     
     def _blend_overlay(self, frame, overlay, anchor_point, width, height, offset_y=0):
-        """Blend overlay onto frame at specified position"""
+        
         try:
-            # Resize overlay
+            
             overlay_resized = cv2.resize(overlay, (width, height))
             
-            # Calculate position (centered on anchor point)
+            
             x = int(anchor_point[0] - width // 2)
             y = int(anchor_point[1] + offset_y)
             
-            # Ensure overlay fits within frame
+            
             h, w, _ = frame.shape
             if x < 0:
                 overlay_resized = overlay_resized[:, -x:]

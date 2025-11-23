@@ -1,5 +1,5 @@
 import os
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 
 import streamlit as st
 import cv2
@@ -182,7 +182,7 @@ if input_mode == "🎥 Live Detection":
         cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
         
         last_face_shape = None
-        
+        camera_index =1
         try:
             if not cap.isOpened():
                 st.error(f"❌ Could not access camera at index {camera_index}. Please try a different index in the sidebar.")
